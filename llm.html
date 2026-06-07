@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local LLM Features Reference</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #161b27;
+    --surface2: #1d2436;
+    --border: #2a3045;
+    --border2: #3a4460;
+    --text: #e8eaf0;
+    --text2: #8b95b0;
+    --text3: #555f7a;
+    --accent: #4f7cff;
+
+    --arch:   #7c6af7; --arch-bg:   #1a1830;
+    --mem:    #2ec4a9; --mem-bg:    #0f2522;
+    --speed:  #f5a623; --speed-bg:  #251e0e;
+    --train:  #ff6b6b; --train-bg:  #261515;
+    --tool:   #4f7cff; --tool-bg:   #111830;
+    --gen:    #56cf75; --gen-bg:    #0f2018;
+    --safety: #f06292; --safety-bg: #261220;
+    --multi:  #e879f9; --multi-bg:  #21102a;
+  }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 32px 24px 64px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 28px;
+  }
+  .header-top {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .version-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .header-sub {
+    font-size: 13px;
+    color: var(--text3);
+  }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 180px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 13px;
+    pointer-events: none;
+  }
+  .search-box {
+    width: 100%;
+    padding: 7px 12px 7px 30px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .search-box::placeholder { color: var(--text3); }
+  .search-box:focus { border-color: var(--accent); }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 18px;
+    align-items: center;
+  }
+  .filter-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover { border-color: var(--border2); color: var(--text2); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .count-bar {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    transition: border-color .15s, background .15s;
+  }
+  .card:hover { border-color: var(--border2); background: var(--surface2); }
+  .card.hidden { display: none; }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: .03em;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 5px;
+    line-height: 1.3;
+  }
+  .card-desc {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+  .card-analogy {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 8px;
+    padding-left: 9px;
+    border-left: 2px solid var(--border2);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  /* Category colors */
+  .cat-arch   .dot { background: var(--arch); }
+  .cat-arch   .badge { background: var(--arch-bg); color: var(--arch); }
+  .cat-mem    .dot { background: var(--mem); }
+  .cat-mem    .badge { background: var(--mem-bg); color: var(--mem); }
+  .cat-speed  .dot { background: var(--speed); }
+  .cat-speed  .badge { background: var(--speed-bg); color: var(--speed); }
+  .cat-train  .dot { background: var(--train); }
+  .cat-train  .badge { background: var(--train-bg); color: var(--train); }
+  .cat-tool   .dot { background: var(--tool); }
+  .cat-tool   .badge { background: var(--tool-bg); color: var(--tool); }
+  .cat-gen    .dot { background: var(--gen); }
+  .cat-gen    .badge { background: var(--gen-bg); color: var(--gen); }
+  .cat-safety .dot { background: var(--safety); }
+  .cat-safety .badge { background: var(--safety-bg); color: var(--safety); }
+  .cat-multi  .dot { background: var(--multi); }
+  .cat-multi  .badge { background: var(--multi-bg); color: var(--multi); }
+
+  .empty-state {
+    display: none;
+    grid-column: 1 / -1;
+    padding: 48px;
+    text-align: center;
+    color: var(--text3);
+    font-size: 13px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* Section dividers */
+  .section-divider {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+  }
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text2);
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer;
+    padding: 2px 0;
+  }
+  .legend-item:hover { color: var(--text); }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>Local LLM · Feature Reference</h1>
+    <span class="version-tag">v1.0</span>
+  </div>
+  <div class="header-sub">60+ features explained for non-AI specialists — architecture, training, inference, safety, and more.</div>
+</div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input class="search-box" type="text" placeholder="Search features, descriptions…" oninput="doSearch(this.value)" id="searchInput">
+  </div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" data-cat="all" onclick="setFilter('all')">All</button>
+  <button class="filter-btn" data-cat="arch"   onclick="setFilter('arch')"   style="--ac:var(--arch)">Architecture</button>
+  <button class="filter-btn" data-cat="mem"    onclick="setFilter('mem')"    style="--ac:var(--mem)">Memory &amp; Retrieval</button>
+  <button class="filter-btn" data-cat="speed"  onclick="setFilter('speed')"  style="--ac:var(--speed)">Speed &amp; Hardware</button>
+  <button class="filter-btn" data-cat="train"  onclick="setFilter('train')"  style="--ac:var(--train)">Training</button>
+  <button class="filter-btn" data-cat="tool"   onclick="setFilter('tool')"   style="--ac:var(--tool)">Agentic</button>
+  <button class="filter-btn" data-cat="gen"    onclick="setFilter('gen')"    style="--ac:var(--gen)">Generation</button>
+  <button class="filter-btn" data-cat="safety" onclick="setFilter('safety')" style="--ac:var(--safety)">Safety &amp; Alignment</button>
+  <button class="filter-btn" data-cat="multi"  onclick="setFilter('multi')"  style="--ac:var(--multi)">Multimodal</button>
+</div>
+
+<div class="count-bar" id="countBar"></div>
+<div class="grid" id="grid"></div>
+
+<script>
+const CATS = {
+  arch:   { label: 'Architecture',       color: '#7c6af7' },
+  mem:    { label: 'Memory & Retrieval', color: '#2ec4a9' },
+  speed:  { label: 'Speed & Hardware',   color: '#f5a623' },
+  train:  { label: 'Training',           color: '#ff6b6b' },
+  tool:   { label: 'Agentic',            color: '#4f7cff' },
+  gen:    { label: 'Generation',         color: '#56cf75' },
+  safety: { label: 'Safety & Alignment', color: '#f06292' },
+  multi:  { label: 'Multimodal',         color: '#e879f9' },
+};
+
+const DATA = [
+  // ARCHITECTURE
+  { cat:'arch', title:'MoE — Mixture of Experts', desc:'The model is divided into many specialist sub-networks called experts. Only a few activate per token — the rest stay idle. A very large model runs as fast as a much smaller one because most of its weight is unused per step.', analogy:'Like a hospital routing you to one specialist instead of having every doctor examine you at once.' },
+  { cat:'arch', title:'Dense model', desc:'Every single parameter activates for every token. Simpler and more predictable than MoE but heavier on VRAM and compute. Most classic models (Llama, Mistral base) are dense.', analogy:'Like asking every expert in the room to weigh in on every question.' },
+  { cat:'arch', title:'Transformer', desc:'The core architecture behind nearly all modern LLMs. Uses attention mechanisms to relate every word to every other word in the context window. Almost every local model you will encounter is a transformer.', analogy:'Like reading a sentence by comparing each word to every other word before deciding what it means.' },
+  { cat:'arch', title:'Attention / Self-attention', desc:'The mechanism inside a transformer where the model decides which other tokens are most relevant when processing each token. The primary "thinking" layer of the model.', analogy:'Like highlighting the words in a sentence that most influence the meaning of the word you are currently reading.' },
+  { cat:'arch', title:'Multi-head attention', desc:'Running several attention processes in parallel, each focusing on different aspects of the text (syntax, semantics, coreference…). Results are merged. More heads = richer understanding.', analogy:'Like several readers each annotating the same text looking for different things, then combining their notes.' },
+  { cat:'arch', title:'Context window', desc:'The maximum number of tokens the model can hold in working memory at once — your prompt, its replies, and any injected context. When exceeded, older content is dropped and forgotten.', analogy:'Like a notepad with a fixed number of pages: new notes push old ones off.' },
+  { cat:'arch', title:'Parameters (7B, 27B…)', desc:'The total learned numeric values in the model. More = generally smarter but requires more VRAM. 7B = 7 billion numbers baked in during training. Not adjustable at runtime.', analogy:'Like the number of synapses in a brain: more connections = more capacity to learn and store patterns.' },
+  { cat:'arch', title:'Layers / Depth', desc:'The number of stacked transformer blocks. Each layer refines the model\'s internal representation of the input. Deeper = more nuanced reasoning, but slower and heavier on hardware.', analogy:'Like editorial passes on a draft: each round makes the understanding more refined.' },
+  { cat:'arch', title:'Hidden size / Embedding dim', desc:'The width of each layer — how many numbers represent a single token at each processing step. Larger = more expressive per layer. Combined with depth it defines model capacity.', analogy:'Like image resolution: more pixels per frame, not more frames.' },
+  { cat:'arch', title:'Positional encoding', desc:'Because transformers process all tokens simultaneously (not one by one), positional encoding injects information about each token\'s position in the sequence so word order is not lost.', analogy:'Like numbering the pages of a shuffled book before reading it.' },
+  { cat:'arch', title:'Tokenizer / Tokenization', desc:'Text is split into tokens (words, sub-words, or characters) before the model processes it. Token count does not equal word count — rare or long words may become multiple tokens. Determines how efficiently your context is used.', analogy:'Like breaking a sentence into puzzle pieces — some words are one piece, others are three.' },
+  { cat:'arch', title:'Vocabulary size', desc:'How many distinct tokens the model knows. Larger vocabularies handle rare words, code, and non-English text more efficiently but slightly increase model size.', analogy:'Like the size of a dictionary: more entries means fewer times you need to spell out an unusual word character by character.' },
+
+  // MEMORY & RETRIEVAL
+  { cat:'mem', title:'RAG — Retrieval-Augmented Generation', desc:'Before answering, relevant chunks are fetched from an external knowledge base and injected into the prompt. The model answers using both its training knowledge AND the retrieved facts. Greatly reduces hallucination on domain-specific content.', analogy:'Like an open-book exam: look up the relevant passage, then answer.' },
+  { cat:'mem', title:'Embeddings', desc:'Numbers representing the "meaning" of text in high-dimensional space. Similar meanings land close together. Powers semantic search, RAG retrieval, and document clustering.', analogy:'Like sorting books by topic so related subjects end up on the same shelf.' },
+  { cat:'mem', title:'Vector database', desc:'A database optimised to store and search embeddings by semantic similarity. The "shelf" that RAG retrieves from. Examples: ChromaDB, Qdrant, FAISS, Milvus.', analogy:'Like a search engine for meaning rather than exact keywords.' },
+  { cat:'mem', title:'Chunking', desc:'Splitting large documents into smaller pieces before embedding them. Chunk size affects retrieval quality: too small = missing context, too large = noisy matches.', analogy:'Like breaking a book into paragraphs so you can find the one relevant paragraph instead of the whole chapter.' },
+  { cat:'mem', title:'Reranking', desc:'After RAG fetches the top-N candidates, a second (often smaller) model re-scores them for actual relevance and reorders before passing to the LLM. Improves answer quality significantly.', analogy:'Like a librarian double-checking the 10 books the catalog returned before handing them to you.' },
+  { cat:'mem', title:'KV cache', desc:'During generation the model saves intermediate computations so it does not redo them for each new token. Long contexts consume more VRAM for cache storage. Huge impact on speed for multi-turn conversations.', analogy:'Like keeping your scratch work on the desk instead of filing and re-fetching it every sentence.' },
+  { cat:'mem', title:'Long-context model', desc:'Models trained to handle very large context windows (32k, 128k, 1M+ tokens). Requires more VRAM and is slower, but can process entire codebases or books at once.', analogy:'Like a person with a photographic memory who can hold an entire novel in mind while answering a question about chapter 3.' },
+  { cat:'mem', title:'Conversation history / Memory', desc:'Keeping prior turns and re-injecting them each time so the model appears to "remember". In long chats this eats the context window fast — summarization is often used to compress history.', analogy:'Like reading back your notes before continuing a meeting.' },
+  { cat:'mem', title:'Semantic search', desc:'Finding documents by meaning similarity rather than exact keyword match. Built on embeddings. Returns "cat breeds" results when you search "feline varieties" without those exact words existing in the index.', analogy:'Like asking a librarian what you mean instead of searching a literal word index.' },
+
+  // SPEED & HARDWARE
+  { cat:'speed', title:'Quantization (Q4, Q8…)', desc:'Reducing the numerical precision of model weights to shrink VRAM use and boost speed. Q4 = very small and fast but slight quality loss. Q8 = near-lossless. IQ3/IQ4 = smart mixed-precision methods.', analogy:'Like compressing a photo: smaller file, slightly less sharp.' },
+  { cat:'speed', title:'VRAM (GPU memory)', desc:'The memory on your GPU. Model weights must fit here for fast inference. If they do not fit, the model spills to RAM (CPU offloading) which is 10-50x slower. More VRAM = bigger and faster models.', analogy:'Like desk space: if the project overflows, you are constantly going to the filing cabinet.' },
+  { cat:'speed', title:'Tokens/sec (t/s)', desc:'Generation speed. ~10 t/s = slow. ~30-50 = smooth and comfortable. 80+ = instant. Determined by model size, quantization level, GPU VRAM, and batch size.', analogy:'Like reading speed: words per second rolling off the press.' },
+  { cat:'speed', title:'Prefill speed (prompt processing)', desc:'How fast the model processes your input prompt before it starts generating. Measured in tokens/sec separately from output speed. Long prompts can cause a noticeable pause before the first word appears.', analogy:'Like the time to load a document before you can start editing it.' },
+  { cat:'speed', title:'Speculative decoding', desc:'A small draft model guesses several tokens ahead; the large model verifies them in parallel. When the guess is correct, you get multiple tokens for the cost of one verification pass. Can double effective throughput.', analogy:'Like an assistant drafting a paragraph and a manager approving it in one glance.' },
+  { cat:'speed', title:'CPU offloading', desc:'When a model does not fully fit in VRAM, some layers run on CPU RAM instead. The model still runs but much slower. Controlled by the --n-gpu-layers setting in llama.cpp / Ollama.', analogy:'Like a chef who runs out of counter space and uses a side table — the workflow continues but slower.' },
+  { cat:'speed', title:'Flash Attention', desc:'A hardware-aware algorithm that computes attention much faster and with less VRAM by being smarter about GPU memory access patterns. Drop-in speedup for supported hardware.', analogy:'Like reorganising a recipe so you never have to leave the kitchen mid-cook.' },
+  { cat:'speed', title:'Batching', desc:'Processing multiple requests simultaneously on one GPU instead of sequentially. Improves throughput for multi-user or multi-agent setups. Most single-user local setups run batch size 1.', analogy:'Like a chef cooking multiple orders at once on the same stove.' },
+  { cat:'speed', title:'Tensor parallelism', desc:'Splitting a single model across multiple GPUs simultaneously, each computing part of every layer at the same time. Required for models too large for one card.', analogy:'Like splitting one very heavy task among several workers who all act simultaneously.' },
+  { cat:'speed', title:'Pipeline parallelism', desc:'Assigning different layers to different GPUs in sequence: GPU 1 handles layers 1-16, GPU 2 handles 17-32. Less ideal than tensor parallelism but simpler to set up.', analogy:'Like an assembly line where each station handles one stage of production.' },
+  { cat:'speed', title:'GGUF / llama.cpp', desc:'A file format and runtime for running quantized models on CPU or mixed CPU+GPU without complex setup. Used by Ollama under the hood. One self-contained file per model.', analogy:'Like a portable app that needs no install — just run the file.' },
+
+  // TRAINING
+  { cat:'train', title:'Pretraining', desc:'The first phase: training from scratch on massive text data (trillions of tokens). Produces a base model that can predict text but has no specific personality or instruction-following ability.', analogy:'Like a child reading every book ever written before starting school.' },
+  { cat:'train', title:'Fine-tuning', desc:'Continuing training on a smaller, domain-specific dataset to specialise the model. Adjusts existing weights. Used to add coding, medical, or game-dev expertise on top of a general base.', analogy:'Like a generalist doctor completing a surgical residency.' },
+  { cat:'train', title:'LoRA / QLoRA', desc:'Efficient fine-tuning that only trains a small set of injected adapter matrices rather than all model weights. QLoRA also quantizes the frozen base model so fine-tuning fits on a single consumer GPU.', analogy:'Like adding sticky-note annotations to a textbook instead of rewriting the whole book.' },
+  { cat:'train', title:'RLHF — Reinforcement Learning from Human Feedback', desc:'Human raters score model outputs; those scores train a reward model; the LLM is then fine-tuned to maximise that reward. Used to make base models actually helpful and less harmful.', analogy:'Like coaching an employee with continuous feedback scores until their behaviour improves.' },
+  { cat:'train', title:'DPO — Direct Preference Optimisation', desc:'A simpler alternative to RLHF. The model is shown pairs of responses (good vs bad) and trained to prefer the good one directly. No separate reward model needed — faster and more stable.', analogy:'Like teaching by example: this answer is better than that one, adjust accordingly.' },
+  { cat:'train', title:'Instruction tuning / IFT', desc:'Fine-tuning on (instruction, response) pairs to teach a base model to follow commands. Turns a raw text-predictor into a useful assistant that can answer questions and complete tasks.', analogy:'Like training a well-read intern to actually follow directions, not just free-associate.' },
+  { cat:'train', title:'SFT — Supervised Fine-Tuning', desc:'Training the model on labelled examples where the correct output is provided. The most common first step after pretraining. Both LoRA and full fine-tunes are forms of SFT.', analogy:'Like practice exams with an answer key: the model adjusts until its answers match.' },
+  { cat:'train', title:'Unsloth / Axolotl', desc:'Popular open-source tools that make LoRA/QLoRA fine-tuning faster and more memory-efficient. Unsloth claims 2-5x speedups over standard HuggingFace training. Both run fully locally.', analogy:'Like a power tool versus doing fine-tuning by hand — same job, much faster.' },
+  { cat:'train', title:'Dataset / Training data', desc:'The text (or code, or conversations) the model learns from. Quality and format matter enormously. For fine-tuning, thousands of well-curated examples beat millions of noisy ones.', analogy:'Like study material: good textbooks beat random Wikipedia pages for exam prep.' },
+  { cat:'train', title:'Overfitting', desc:'When a model memorises training examples instead of learning general patterns. It scores perfectly on training data but fails on new unseen input. Prevented by using validation data and early stopping.', analogy:'Like a student who memorises practice test answers but cannot handle a new question.' },
+  { cat:'train', title:'Modelfile / System prompt', desc:'Instructions baked in before the user ever types. Sets persona, rules, tone, and context. In Ollama a Modelfile lets you permanently bundle these with a specific model version.', analogy:'Like a briefing given to an employee at the start of every shift.' },
+
+  // AGENTIC
+  { cat:'tool', title:'MCP — Model Context Protocol', desc:'A standard that lets an AI model call external tools (editors, file systems, APIs) in a structured way. The model can take real actions — open a file, run a command — not just generate text.', analogy:'Like giving the model a labelled set of buttons it can press to interact with the world.' },
+  { cat:'tool', title:'Function calling / Tool use', desc:'The model outputs structured "call this function with these arguments" blocks instead of plain text. Your code runs the actual function and feeds the result back. Powers multi-step automation.', analogy:'Like the model filling out a form that triggers a real action in your software.' },
+  { cat:'tool', title:'Agent / Agentic loop', desc:'A loop where the model reasons, picks a tool, gets the result, reasons again, picks another tool… until the task is complete. The model acts autonomously across multiple steps without human intervention per step.', analogy:'Like an employee who breaks a project into tasks, completes each, checks the result, then moves on.' },
+  { cat:'tool', title:'ReAct (Reason + Act)', desc:'A prompting strategy where the model alternates between Thought (reasoning) and Action (tool call) steps. Makes the reasoning process transparent and easier to debug.', analogy:'Like a detective writing down their reasoning before each next investigative step.' },
+  { cat:'tool', title:'Planning / Task decomposition', desc:'Breaking a complex goal into a sequence of sub-tasks the model or orchestrator can tackle one at a time. Common in code generation and long research workflows.', analogy:'Like writing a project plan before starting work.' },
+  { cat:'tool', title:'Multi-agent', desc:'Multiple model instances each handling a role (planner, coder, reviewer) and passing results between them. Can parallelize work and add quality checks through peer review.', analogy:'Like a small team where each person has a specialty and they hand work off to each other.' },
+  { cat:'tool', title:'Structured output / JSON mode', desc:'Forcing the model to respond in valid JSON (or another schema) so downstream code can parse it reliably without fragile text parsing or regex.', analogy:'Like requiring an employee to fill in a form instead of writing a free-form email.' },
+  { cat:'tool', title:'Grounding', desc:'Connecting model outputs to verified external sources (retrieved documents, database lookups) to reduce hallucinations. RAG is the most common grounding technique.', analogy:'Like requiring a journalist to cite a source for every claim instead of writing from memory.' },
+
+  // GENERATION
+  { cat:'gen', title:'Temperature', desc:'Controls output randomness. Low (0-0.3) = focused and predictable, best for code and facts. High (0.8-1.2) = creative and varied, best for brainstorming. At 0 the model always picks the highest-probability token.', analogy:'Like a creativity dial: turn it down for precision work, up for brainstorming.' },
+  { cat:'gen', title:'Top-P (nucleus sampling)', desc:'Only considers tokens whose cumulative probability adds up to P. Trims the long tail of unlikely words. Works together with temperature to shape output quality.', analogy:'Like only considering contestants who together represent 90% of likely outcomes.' },
+  { cat:'gen', title:'Top-K', desc:'Only the K highest-probability tokens are considered at each step. Simpler than Top-P. Low K = conservative output, high K = more variety. Often used alongside temperature.', analogy:'Like restricting a multiple-choice test to only the 5 most plausible answers.' },
+  { cat:'gen', title:'Repetition penalty', desc:'Reduces the probability of tokens the model has already used recently. Prevents the model from looping or repeating the same phrases — a common failure mode without it.', analogy:'Like a writing rule that penalises you for using the same word twice in a paragraph.' },
+  { cat:'gen', title:'Max tokens / Max new tokens', desc:'Hard cap on how many tokens the model generates in one response. Prevents runaway outputs and controls resource use. Separate from the context window size.', analogy:'Like telling a speaker they have a 2-minute time slot — they must wrap up.' },
+  { cat:'gen', title:'Stop tokens / Stop sequences', desc:'Special strings that tell the model to stop generating immediately. Used to prevent it from continuing past the end of a structured response, such as after a closing JSON bracket.', analogy:'Like a full stop that ends the script instead of letting it run indefinitely.' },
+  { cat:'gen', title:'Beam search', desc:'Instead of always picking the most likely next token, the model explores several paths simultaneously and picks the best complete sequence. More accurate than greedy decoding but slower.', analogy:'Like considering three different routes at each intersection and picking the shortest overall path at the end.' },
+  { cat:'gen', title:'Greedy decoding', desc:'Always picks the single highest-probability next token. Fast and deterministic but can get stuck in repetitive or suboptimal outputs since it never backtracks.', analogy:'Like always taking the most obvious next step without considering where the path ultimately leads.' },
+  { cat:'gen', title:'Chain-of-Thought (CoT)', desc:'Prompting the model to reason step by step before giving a final answer. Significantly improves performance on math, logic, and multi-step tasks.', analogy:'Like asking someone to show their work before circling the final answer.' },
+  { cat:'gen', title:'Thinking mode / Extended thinking', desc:'Some models (DeepSeek-R1, QwQ, Qwen3) generate internal reasoning tokens before the visible response. Deeper than CoT and often hidden from the user. Boosts accuracy on complex reasoning.', analogy:'Like a person who silently works through a problem in their head before speaking.' },
+  { cat:'gen', title:'Logits / Logprobs', desc:'The raw numeric scores the model assigns to every possible next token before sampling. Logprobs are the log-probabilities. Useful for calibration, uncertainty estimation, and constrained generation.', analogy:'Like seeing the raw vote tally before it is converted to a winner.' },
+  { cat:'gen', title:'Hallucination', desc:'When the model confidently generates plausible-sounding but factually wrong information. A core failure mode, especially on specific facts, dates, or code details without grounding or RAG.', analogy:'Like a student who does not know the answer but writes something convincing anyway.' },
+
+  // SAFETY & ALIGNMENT
+  { cat:'safety', title:'Alignment', desc:'Training the model to be helpful, harmless, and honest — to pursue goals that match human intentions rather than optimising for something subtly wrong or dangerous.', analogy:'Like ensuring an employee understands not just the letter of their job description but the spirit of it.' },
+  { cat:'safety', title:'Constitutional AI / RLAIF', desc:'Instead of human raters, the model critiques itself against a written set of principles (a constitution) or is scored by another AI. Scales alignment without requiring massive manual labelling.', analogy:'Like giving an employee a written code of conduct and having them self-audit against it.' },
+  { cat:'safety', title:'Guardrails', desc:'Rules or classifiers that intercept model input/output and block or modify harmful content. Can be prompt-based, code-based, or a separate classifier model running alongside the LLM.', analogy:'Like a content moderation filter running on top of every post.' },
+  { cat:'safety', title:'Jailbreaking', desc:'Techniques used to bypass a model\'s safety guardrails — usually through clever prompt framing. A persistent cat-and-mouse between model trainers and adversarial users.', analogy:'Like finding a loophole in a rulebook that technically complies but violates the spirit.' },
+  { cat:'safety', title:'Uncensored / Unfiltered model', desc:'A model that has had safety fine-tuning removed or reduced, often via "abliteration" techniques. Common in the local model community. Useful for research but requires responsible use.', analogy:'Like a reference book that includes all information without editorial filtering.' },
+  { cat:'safety', title:'Prompt injection', desc:'An attack where malicious text in the input tricks the model into ignoring its system instructions. A real security risk in agentic systems that process untrusted data from files, web pages, or databases.', analogy:'Like a fraudulent sticky note slipped into a memo that overrides the original instructions.' },
+
+  // MULTIMODAL
+  { cat:'multi', title:'Multimodal model', desc:'A model that accepts more than one type of input — text plus images, audio, video, or all of them. The model understands relationships across modalities within a single context.', analogy:'Like a person who can read a diagram AND the caption next to it together.' },
+  { cat:'multi', title:'Vision-language model (VLM)', desc:'A multimodal model that takes images as input alongside text. Can describe images, answer questions about them, read screenshots, or reason over diagrams and charts.', analogy:'Like showing a photo to someone and asking them a question about it.' },
+  { cat:'multi', title:'Image encoder', desc:'The component that converts a raw image into a vector representation the LLM can understand. Usually a vision transformer (ViT). Sits in front of the language model and translates pixels to tokens.', analogy:'Like a translator converting visual information into words the language brain can process.' },
+  { cat:'multi', title:'Text-to-image / Diffusion model', desc:'A separate model type (Stable Diffusion, Flux…) that generates images from text prompts. Not an LLM feature per se, but commonly integrated into local AI pipelines alongside language models.', analogy:'Like an artist who reads your description and draws it — a different skill from writing.' },
+  { cat:'multi', title:'Audio / Speech model', desc:'Models like Whisper (speech-to-text) or TTS engines that handle voice. Often chained with LLMs to build voice assistants. Increasingly integrated directly into multimodal model architectures.', analogy:'Like adding ears and a voice to a brain that previously could only read and write.' },
+  { cat:'multi', title:'Cross-modal attention', desc:'Attention mechanisms that let the model relate tokens from different modalities (e.g. an image region to a text word). The glue that makes multimodal understanding work at a deep level.', analogy:'Like the brain region that connects what you see with what you read simultaneously.' },
+];
+
+let currentCat = 'all';
+let currentQ = '';
+
+function buildCards() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '<div class="empty-state" id="emptyState">No features match — try a different search or filter.</div>';
+
+  let lastCat = null;
+  DATA.forEach((d, i) => {
+    if (d.cat !== lastCat) {
+      const div = document.createElement('div');
+      div.className = 'section-divider';
+      div.dataset.sectionCat = d.cat;
+      div.innerHTML = `<span class="section-label" style="color:${CATS[d.cat].color}">${CATS[d.cat].label}</span><span class="section-line"></span>`;
+      grid.appendChild(div);
+      lastCat = d.cat;
+    }
+    const card = document.createElement('div');
+    card.className = `card cat-${d.cat}`;
+    card.dataset.cat = d.cat;
+    card.dataset.text = (d.title + ' ' + d.desc + ' ' + CATS[d.cat].label).toLowerCase();
+    card.innerHTML = `
+      <div class="card-top">
+        <span class="dot"></span>
+        <span class="badge">${CATS[d.cat].label}</span>
+      </div>
+      <div class="card-title">${d.title}</div>
+      <div class="card-desc">${d.desc}</div>
+      ${d.analogy ? `<div class="card-analogy">${d.analogy}</div>` : ''}
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function render() {
+  let shown = 0;
+  document.querySelectorAll('.card').forEach(c => {
+    const catMatch = currentCat === 'all' || c.dataset.cat === currentCat;
+    const qMatch = !currentQ || c.dataset.text.includes(currentQ);
+    const vis = catMatch && qMatch;
+    c.classList.toggle('hidden', !vis);
+    if (vis) shown++;
+  });
+  // Show/hide section dividers
+  document.querySelectorAll('.section-divider').forEach(div => {
+    const cat = div.dataset.sectionCat;
+    const anyVisible = [...document.querySelectorAll(`.card[data-cat="${cat}"]`)].some(c => !c.classList.contains('hidden'));
+    div.style.display = anyVisible ? 'flex' : 'none';
+  });
+  const empty = document.getElementById('emptyState');
+  empty.style.display = shown === 0 ? 'block' : 'none';
+  document.getElementById('countBar').textContent = shown + ' feature' + (shown !== 1 ? 's' : '') + ' shown';
+}
+
+function setFilter(cat) {
+  currentCat = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  render();
+}
+
+function doSearch(q) {
+  currentQ = q.toLowerCase().trim();
+  render();
+}
+
+buildCards();
+render();
+</script>
+</body>
+</html>
